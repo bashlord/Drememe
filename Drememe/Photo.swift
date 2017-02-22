@@ -8,6 +8,54 @@
 
 import UIKit
 import CoreFoundation
+
+class Param{
+    var width: CGFloat
+    var height: CGFloat
+    var offset_w: CGFloat
+    var offset_h: CGFloat
+    
+    var w: CGFloat = 0
+    var h: CGFloat = 0
+    var o_w: CGFloat = 0
+    var o_h: CGFloat = 0
+    
+    var scalar_h: CGFloat? {
+        didSet {
+            if let scalar_h = scalar_h {
+                h = height*scalar_h
+                o_h = offset_h*scalar_h
+            }
+        }
+    }
+    
+    var scalar_w: CGFloat? {
+        didSet {
+            if let scalar_w = scalar_w {
+                w = width*scalar_w
+                o_w = offset_w*scalar_w
+            }
+        }
+    }
+    
+    init(a:Int, b:Int, c:Int, d:Int) {
+        self.width = CGFloat(a)
+        self.height = CGFloat(b)
+        self.offset_w = CGFloat(c)
+        self.offset_h = CGFloat(d)
+    }
+    
+    convenience init(dictionary: NSDictionary) {
+        //let photo = dictionary["Photo"] as? String
+        //let image = UIImage(named: photo!)?.decompressedImage
+        let a = dictionary["width"] as? Int
+        let b = dictionary["height"] as? Int
+        let c = dictionary["offset_w"] as? Int
+        let d = dictionary["offset_h"] as? Int
+        self.init(a:a!, b:b!, c:c!, d:d!)
+    }
+}
+
 class Photo {
     //let memeURLS = CFArray()
     class func allPhotos() -> [Photo] {
@@ -15,40 +63,41 @@ class Photo {
         if let URL = Bundle.main.url(forResource: "Photos", withExtension: "plist") {
             if let photosFromPlist = NSArray(contentsOf: URL) {
                 for dictionary in photosFromPlist {
-                    let temp = dictionary as! NSDictionary
                     let photo = Photo(dictionary: dictionary as! NSDictionary)
                     photos.append(photo)
+                    //print(dictionary)
                 }
             }
         }
         print("Photo::  allPhotos() returning")
         return photos
     }
-    
-    //var caption: String
-    //var comment: String
+
     var image: UIImage
     var path: String
-    
-    //init(caption: String, comment: String, image: UIImage) {
-    init(image: UIImage, path:String) {
-        //self.caption = caption
-        //self.comment = comment
+    var style: String
+    var params = [Param]()
+    init(image: UIImage, path:String, p:[Param], s:String) {
         self.image = image
         self.path = path
+        self.params = p
+        self.style = s
     }
     
     convenience init(dictionary: NSDictionary) {
-        //let caption = dictionary["Caption"] as? String
-        //let comment = dictionary["Comment"] as? String
-        //let path = dictionary["Path"] as? String
+        var params = [Param]()
         let photo = dictionary["Photo"] as? String
         let image = UIImage(named: photo!)?.decompressedImage
-        self.init(image: image!, path: photo!)
-        print("image init size ", image?.size.width, image?.size.height)
-        
-        //self.init(dictionary: image!)
-        
+        let style = dictionary["Style"] as? String
+        if style != "Default"{
+            let ps = dictionary["Param"] as? NSArray
+            for dict in ps!{
+                let p = Param(dictionary: dict as! NSDictionary)
+                //print(p)
+                params.append(p)
+            }
+        }
+        self.init(image: image!, path: photo!,p: params, s:style!)
     }
     
     func heightForComment(_ font: UIFont, width: CGFloat) -> CGFloat {

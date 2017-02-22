@@ -31,6 +31,8 @@ var memeFont = [
     NSStrokeWidthAttributeName : -4.0
     ] as [String : Any]
 
+
+
 class MemeEditLauncherView: UIView{
     var launcher: MemeEditLauncher?
 
@@ -49,7 +51,7 @@ class MemeEditLauncherView: UIView{
 
 class MemeEditLauncher: NSObject, UITextViewDelegate {
     var view = MemeEditLauncherView()
-    var currentFontSize: CGFloat = 40.0
+    var currentFontSize: CGFloat = 30.0
     //imageView that holds the meme blank resized to fit the screen
     var imageView = UIImageView()
     // the original blank template image to be used when saving the text
@@ -62,10 +64,13 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
     var height: CGFloat?
     // height offset for sliding the views up/down
     var heightOffset: CGFloat = 0.0
-    //picWidth/picHeight can be replaced with imageView.frame.width/imageView.frame.height since they are the same
-    //var picWidth: CGFloat = 0.0
-    //var picHeight: CGFloat = 0.0
-    
+
+    var params = [Param]()
+    var styleType: Int = 0
+    //used for custom textViews that need to have their frames translated
+    var scalar_h: CGFloat = 0.0
+    var scalar_w: CGFloat = 0.0
+    var customTextViews = [UITextView]()
     //not sure if i need this
     var selectedTextView: UITextView?
     
@@ -90,7 +95,7 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
         textView.typingAttributes = memeFont
         textView.textAlignment = .center
         textView.autocapitalizationType = UITextAutocapitalizationType.allCharacters
-        textView.text = "TOP"
+        textView.text = ""
         textView.backgroundColor = UIColor(white: 0, alpha: 0.2)
         textView.returnKeyType = .done
         return textView
@@ -101,11 +106,14 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
         textView.typingAttributes = memeFont
         textView.textAlignment = .center
         textView.autocapitalizationType = UITextAutocapitalizationType.allCharacters
-        textView.text = "BOTTOM"
+        textView.text = ""
         textView.backgroundColor = UIColor(white: 0, alpha: 0.2)
         textView.returnKeyType = .done
         return textView
     }()
+    
+    var thirdTextView: UITextView!
+    var fourthTextView: UITextView!
     
     //flags:
     // 2 = cancel
@@ -226,10 +234,21 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
             height = ((originalImage?.size.height)!*keyWindow.frame.width)/(originalImage?.size.width)!
             if (height! > heightLimit!){
                 height = heightLimit
+                //print(path, "surpasses height limit ratio")
             }else if (height! < heightLimit!/2){
                 height = heightLimit!/2
+                //print(path, "is short AF")
             }
             let memeFrame = CGRect(x: 0, y: 0, width: keyWindow.frame.width, height: height!)
+            
+            if styleType == 5 {
+                scalar_h = height!/(originalImage?.size.height)!
+                scalar_w = keyWindow.frame.width/(originalImage?.size.width)!
+                for p in params {
+                    p.scalar_h = scalar_h
+                    p.scalar_w = scalar_w
+                }
+            }
             
             //resize any image to be able to fit the memeFrame with respect to the
             // image's ratio, then set the image to the memeView's image
@@ -246,10 +265,12 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
                 //maybe we'll do something here later...
                 UIApplication.shared.setStatusBarHidden(true, with: .fade)
                 self.toggleCancelStartButtons(flag: 0)
-
             })
         }
     }
+    /////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////// Animations/Handlers /////////////////////////////////
+    //////////////////////////////////////////////////////////////////
     
     func handleCancel(flag: Int){
         
@@ -262,86 +283,108 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
                                          width: self.view.frame.width, height: self.view.frame.height)
                 }
             }) { (completed: Bool) in }
-            
         }else if flag == 1{
             unsubsribeToKeyboardNotification()
             // animated out of the meme editing
             UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
-                    //animate out the top and bottom TextViews
-                    self.topText.frame.origin.y -= self.topText.frame.height
-                    self.bottomText.frame.origin.y -= self.topText.frame.height + (1.5 * self.topText.frame.height)
-                    
-                    self.toggleCancelClearEditButtons(flag: 1)
-                    
-
-            }) { (completed: Bool) in
+                //animate out the top and bottom TextViews
+                //self.defaultTextViewAnimate(phase: 2)
+                
+                if self.styleType == 2{
+                    self.twoPanelTextViewAnimation(phase: 2)
+                }else if self.styleType == 3{
+                    self.threePanelTextViewAnimation(phase: 2)
+                }else if self.styleType == 4{
+                    self.fourPanelTextViewAnimation(phase: 2)
+                }else if self.styleType == 5{
+                    self.customTextViewAnimate(phase: 2)
+                }else{
+                    self.defaultTextViewAnimate(phase: 2)
+                }
+                
+                self.toggleCancelClearEditButtons(flag: 1)
+            }) { (completed: Bool) in // enter 1
                 UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
-
-                        self.topText.removeFromSuperview()
-                        self.bottomText.removeFromSuperview()
-                        
-                        self.view.frame = CGRect(x: 0, y: 0,
+                    //self.defaultTextViewAnimate(phase: 3)
+                    if self.styleType == 2{
+                        self.twoPanelTextViewAnimation(phase: 3)
+                    }else if self.styleType == 3{
+                        self.threePanelTextViewAnimation(phase: 3)
+                    }else if self.styleType == 4{
+                        self.fourPanelTextViewAnimation(phase: 3)
+                    }else if self.styleType == 5{
+                        self.customTextViewAnimate(phase: 3)
+                    }else{
+                        self.defaultTextViewAnimate(phase: 3)
+                    }
+                    self.view.frame = CGRect(x: 0, y: 0,
                                                  width: self.view.frame.width, height: self.view.frame.height-self.heightOffset)
                     
-                }) { (completed: Bool) in
+                }) { (completed: Bool) in //enter 2
                     UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
-                        
                         self.toggleCancelStartButtons(flag: 0)
                     }) { (completed: Bool) in }
-                }
-            }
+                }// leave 2
+            } //  leave 1
         }
     }
     
     func handleEdit(){
         //calculate UITextView frames to start off the screen and add them to subview
-        topText.frame = CGRect(x: 0, y: 0 - ((2*imageView.frame.height)/5), width: imageView.frame.width, height: ((2*imageView.frame.height)/5))
-        bottomText.frame = CGRect(x: 0, y: 0 - ((2*imageView.frame.height)/5), width: imageView.frame.width, height: ((2*imageView.frame.height)/5))
-        topText.contentSize.height = topText.frame.height
-        topText.contentSize.width = topText.frame.width
-        
-        bottomText.contentSize.height = topText.frame.height
-        bottomText.contentSize.width = bottomText.frame.width
-        self.view.addSubview(topText)
-        self.view.addSubview(bottomText)
+        if self.styleType == 2{
+            twoPanelTextViewAnimation(phase: 0)
+        }else if self.styleType == 3{
+            self.threePanelTextViewAnimation(phase: 0)
+        }else if self.styleType == 4{
+            self.fourPanelTextViewAnimation(phase: 0)
+        }else if self.styleType == 5{
+            self.customTextViewAnimate(phase: 0)
+        }else{
+            defaultTextViewAnimate(phase: 0)
+        }
         
         subscribeToKeyboardNotification()
-        // 1st animation starts here, rolling the inital buttons off screen
+        // BEGIN Animations >>>>>
         UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveLinear, animations: {
-                        self.toggleCancelStartButtons(flag: 1)
-
-        }) { (completed: Bool) in
-            // 2nd animation, shift view upwards so the image aligns with the top 
-            //      of the screen
+            // 1st animation starts here, rolling the inital buttons off screen
+            self.toggleCancelStartButtons(flag: 1)
+        }) { (completed: Bool) in // 1
             UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
-                
+                // 2nd animation, shift view upwards so the image aligns with the top
+                //      of the screen
                 if let window = UIApplication.shared.keyWindow {
-                    
-                    self.view.frame = CGRect(x: 0, y: -(self.heightOffset),
-                                             width: self.view.frame.width, height: self.view.frame.height+self.heightOffset)
+                    self.view.frame = CGRect(x: 0, y: -(self.heightOffset), width: self.view.frame.width, height: self.view.frame.height+self.heightOffset)
                 }
-                
-            }) { (completed: Bool) in
+            }) { (completed: Bool) in // 2
                 UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
                     // 3rd animation, scroll TextViews down to alight with the 
                     //         image that is now aligned with the top of the screen
+                    //self.defaultTextViewAnimate(phase: 1)
+                    if self.styleType == 2{
+                        self.twoPanelTextViewAnimation(phase: 1)
+                    }else if self.styleType == 3{
+                        self.threePanelTextViewAnimation(phase: 1)
+                    }else if self.styleType == 4{
+                        self.fourPanelTextViewAnimation(phase: 1)
+                    }else if self.styleType == 5{
+                        self.customTextViewAnimate(phase: 1)
+                    }else{
+                        self.defaultTextViewAnimate(phase: 1)
+                    }
                     
-                    self.topText.frame.origin.y += self.heightOffset + self.topText.frame.height
-                    self.bottomText.frame.origin.y += self.heightOffset + self.topText.frame.height + (1.5 * self.topText.frame.height)
                     self.toggleCancelClearEditButtons(flag: 0)
-                }) { (completed: Bool) in
-                
-                
-                }
-            }
-        }
+                }) { (completed: Bool) in //3
+                        // End Animations <<<<<
+                    }// 3
+            } // 2
+        }// 1
     }
     
     func handleClear(){
-        if self.topText.text != "TOP" || self.bottomText.text != "BOTTOM"{
-            self.topText.text = "TOP"
-            self.bottomText.text = "BOTTOM"
-        }
+        //if self.topText.text != "TOP" || self.bottomText.text != "BOTTOM"{
+            self.topText.text = ""
+            self.bottomText.text = ""
+        //}
     }
     
     func handleSave(){
@@ -359,7 +402,7 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
 
 extension MemeEditLauncher {
     func isMemed() -> Bool{
-        if topText.text != "TOP" && bottomText.text != "BOTTOM"{
+        if topText.text != "" && bottomText.text != ""{
             if (topText.text?.characters.count)! > 0 && (bottomText.text?.characters.count)! > 0{
                 return true
             }
@@ -400,31 +443,56 @@ extension MemeEditLauncher {
     }
     
     func textViewShouldBeginEditing(_ textView: UITextView) -> Bool {
+        if textView == topText{
+            print("topText selected")
+        }else if textView == bottomText{
+            print("bottomText selected")
+        }else{
+            print("thirdTextView selected")
+        }
         selectedTextView = textView
         return true
     }
     
     func textViewDidBeginEditing(_ textView: UITextView) {
-        if textView == topText && topText.text == "TOP"{
+        //print(textView.font?.fontDescriptor.size)
+        /*if textView == topText && topText.text == "TOP"{
             topText.text = ""
         }else if textView == bottomText && bottomText.text == "BOTTOM"{
             bottomText.text = ""
+        }*/
+        if currentFontSize > textView.frame.size.height{
+            currentFontSize = textView.frame.size.height
+            textView.attributedText = resizeFont(str: textView.text,fontSize: currentFontSize)
+            textView.typingAttributes = resizeTyping(fontSize: currentFontSize)
         }
     }
     
     func textViewDidChange(_ textView: UITextView) {
         if textView.contentSize.height < textView.frame.size.height && currentFontSize < 40{
-            currentFontSize += 1
-            textView.attributedText = resizeFont(str: textView.text,fontSize: currentFontSize)
-            textView.typingAttributes = resizeTyping(fontSize: currentFontSize)
+            //while textView.contentSize.height < textView.frame.size.height && currentFontSize < 40{
+                currentFontSize += 1
+                //textView.attributedText = resizeFont(str: textView.text,fontSize: currentFontSize)
+                //textView.typingAttributes = resizeTyping(fontSize: currentFontSize)
+                //textView.contentSize.height = textView.frame.size.height
+            //}
             //print("CurrentFontSize resized as ", currentFontSize)
-        }else if textView.contentSize.height > textView.frame.size.height && currentFontSize > 20{
-            currentFontSize -= 1
-            textView.attributedText = resizeFont(str: textView.text,fontSize: currentFontSize)
-            textView.typingAttributes = resizeTyping(fontSize: currentFontSize)
+        }else if textView.contentSize.height > textView.frame.size.height && currentFontSize > 10{
+            
+            //while textView.contentSize.height > textView.frame.size.height && currentFontSize > 10{
+                currentFontSize -= 1
+
+                //textView.contentSize.height = textView.frame.size.height
+            //}
+            //currentFontSize -= 1
+            //textView.attributedText = resizeFont(str: textView.text,fontSize: currentFontSize)
+            //textView.typingAttributes = resizeTyping(fontSize: currentFontSize)
             //print("CurrentFontSize resized as ", currentFontSize)
             //print("Character count ",textView.text.characters.count )
         }
+        textView.attributedText = resizeFont(str: textView.text,fontSize: currentFontSize)
+        textView.typingAttributes = resizeTyping(fontSize: currentFontSize)
+        print(currentFontSize)
     }
     
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
@@ -434,7 +502,7 @@ extension MemeEditLauncher {
         }else{
             
             let currentCharacterCount = textView.text?.characters.count ?? 0
-            if (range.length + range.location > currentCharacterCount){
+            if (range.length + range.location > currentCharacterCount) || (currentCharacterCount >= 120){
                 return false
             }
             
@@ -445,9 +513,9 @@ extension MemeEditLauncher {
     
     func textViewShouldEndEditing(_ textView: UITextView) -> Bool {
         if textView == topText && topText.text == ""{
-            topText.text = "TOP"
+            //topText.text = "TOP"
         }else if textView == bottomText && bottomText.text == ""{
-            bottomText.text = "BOTTOM"
+            //bottomText.text = "BOTTOM"
         }
         return true
     }
@@ -474,10 +542,37 @@ extension MemeEditLauncher {
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillHide, object: nil)
     }
 
+    func toggleTextViewUI(flag: Int){
+        var b = true
+        var str = "true"
+        if flag == 0{
+            b = false
+            str = "false"
+        }
+        if selectedTextView != bottomText{
+            bottomText.isUserInteractionEnabled = b
+            print("bottom UI set to ", str)
+        }
+        if selectedTextView != topText{
+            topText.isUserInteractionEnabled = b
+            print("top UI set to ", str)
+            print(bottomText.isUserInteractionEnabled)
+        }
+        if thirdTextView != nil && selectedTextView != thirdTextView{
+            thirdTextView.isUserInteractionEnabled = b
+            print("third UI set to ", str)
+        }
+        if fourthTextView != nil && selectedTextView != fourthTextView{
+            fourthTextView.isUserInteractionEnabled = b
+            print("forth UI set to ", str)
+        }
+    }
+    
     
     func keyboardWillShow(_ notification: Notification) {
         let keyboardHeight = getKeyboardHeight(notification)
         let keyWindow = UIApplication.shared.keyWindow
+        toggleTextViewUI(flag: 0)
         /* slide the view up when keyboard appears, using notifications */
         //if selectedTextView == bottomText && view.frame.origin.y == 0.0 {
         //if the current textView's bottom (its y origin + its height) is less
@@ -502,8 +597,11 @@ extension MemeEditLauncher {
             let keyWindow = UIApplication.shared.keyWindow
             view.frame.size.height -= ((keyWindow?.frame.size.height)!-keyboardHeight)-((keyWindow?.frame.size.height)!-(selectedTextView?.frame.origin.y)!-heightOffset)
             view.frame.origin.y += (selectedTextView?.frame.origin.y)!
+
             sSaveButton.isUserInteractionEnabled = false
         }
+        
+        toggleTextViewUI(flag: 1)
     }
     
     /* Get the height of the keyboard from the user info dictionary */
@@ -541,6 +639,15 @@ extension MemeEditLauncher {
             ac.addAction(UIAlertAction(title: "OK", style: .default))
         }
     }
-    
+
 }
+
+
+
+
+
+
+
+
+
 
