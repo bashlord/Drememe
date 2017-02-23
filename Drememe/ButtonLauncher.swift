@@ -21,7 +21,7 @@ class Button: NSObject {
 
 class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     let cellId = "cellId"
-    let imageNames = ["left", "right", "cancel", "check"]
+    let imageNames = ["left", "right", "cancel", "check", "delete", "clear", "save", "unstar", "star"]
     lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -31,9 +31,10 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
         return cv
     }()
 
-    var homeController: MainController?
+    var pinCell: PinCell?
     var memeLauncher: MemeLauncher?
     var memeEditLauncher: MemeEditLauncher?
+    var favoritesCollectionView: FavoritesCollectionView?
     var flag: Int!// 0 for left, 1 for right
     
     override init(frame: CGRect) {
@@ -49,8 +50,7 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
         
         let selectedIndexPath = IndexPath(item: 0, section: 0)
         collectionView.selectItem(at: selectedIndexPath, animated: false, scrollPosition: UICollectionViewScrollPosition())
-        
-        //setupButton()
+
     }
     
     func setFlag(flag: Int){
@@ -64,6 +64,16 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
             collectionView.backgroundColor = UIColor.red
         }else if flag == 3{
             collectionView.backgroundColor = UIColor.green
+        }else if flag == 4{//smaller cancel
+            collectionView.backgroundColor = UIColor.red
+        }else if flag == 5{//smaller clear
+            collectionView.backgroundColor = UIColor.yellow
+        }else if flag == 6{//smaller save
+            collectionView.backgroundColor = UIColor.green
+        }else if flag == 7{//set fav
+            collectionView.backgroundColor = UIColor.white
+        }else if flag == 8{//is saved
+            collectionView.backgroundColor = UIColor.yellow
         }else{
             collectionView.backgroundColor = UIColor.white
         }
@@ -73,7 +83,17 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
        print("ButtonLauncher:: " ,indexPath.item)
-        if (memeLauncher != nil){
+        //navigation buttons
+        if flag < 2{
+            if flag == 0{
+                pinCell?.handlePager(flag: 0)
+                print("ButtonLauncher back pressed")
+            }else{
+                pinCell?.handlePager(flag: 1)
+                print("ButtonLauncher next pressed")
+            }
+        }else if (memeLauncher != nil){
+            //initial memeView buttons
             if flag == 2{
                 print("Cancel pressed")
                 memeLauncher?.handleCancel()
@@ -82,15 +102,37 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
                 memeLauncher?.handleEdit()
             }
         }else{
+            // while editing memeView buttons
             if flag == 2{
                 print("MemeEdit Cancel pressed")
-                memeEditLauncher?.handleCancel()
+                memeEditLauncher?.handleCancel(flag: 0)
             }else if flag == 3{
                 print("Meme Edit Check pressed")
                 memeEditLauncher?.handleEdit()
+            }else if flag == 4{//smaller cancel
+                print("Meme Edit Check pressed")
+                memeEditLauncher?.handleCancel(flag: 1)
+            }else if flag == 5{//smaller clear
+                print("Meme Edit Clear pressed")
+                memeEditLauncher?.handleClear()
+            }else if flag == 6{//smaller save
+                print("Meme Edit Check pressed")
+                memeEditLauncher?.handleSave()
+            }else if flag == 7{// set template as favorite, initally unfaved
+                print("Meme Set as Favorite")
+                memeEditLauncher?.handleFav(flag: 0)
+                flag = 8
+                collectionView.reloadItems(at: [indexPath])
+                //collectionView.item
+                //cell.imageView.image = UIImage(named: imageNames[flag])
+            }else if flag == 8{// unset template from favorites, initially fav
+                print("Meme Unset as Favorite")
+                memeEditLauncher?.handleFav(flag: 1)
+                flag = 7
+                collectionView.reloadItems(at: [indexPath])
+                //cell.imageView.image = UIImage(named: imageNames[flag])
             }
         }
-        
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -99,11 +141,8 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! ButtonCell
-        print(indexPath.item)
         //cell.imageView.image = UIImage(named: imageNames[flag])?.withRenderingMode(.alwaysTemplate)
         cell.imageView.image = UIImage(named: imageNames[flag])
-        cell.tintColor = UIColor.purple
-        
         return cell
     }
     
@@ -146,11 +185,15 @@ class ButtonCell: BaseCell {
         super.setupViews()
         
         addSubview(imageView)
-        addConstraintsWithFormat("H:[v0(80)]", views: imageView)
-        addConstraintsWithFormat("V:[v0(80)]", views: imageView)
+        //let w = self.frame.width.
+        
+        //print("ButtonCell:: setupView():: ", frame.width, frame.height)
+        addConstraintsWithFormat("H:[v0(\(frame.width))]", views: imageView)
+        addConstraintsWithFormat("V:[v0(\(frame.height))]", views: imageView)
         
         addConstraint(NSLayoutConstraint(item: imageView, attribute: .centerX, relatedBy: .equal, toItem: self, attribute: .centerX, multiplier: 1, constant: 0))
         addConstraint(NSLayoutConstraint(item: imageView, attribute: .centerY, relatedBy: .equal, toItem: self, attribute: .centerY, multiplier: 1, constant: 0))
+        
     }
     
 }

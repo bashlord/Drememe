@@ -13,34 +13,33 @@ import UIKit
 class MainController: UICollectionViewController, UICollectionViewDelegateFlowLayout  {
     
     let cellId = "cellId"
-    let trendingCellId = "trendingCellId"
-    let subscriptionCellId = "subscriptionCellId"
+    let favId = "favId"
     
-    let titles = ["New", "Trending", "Subscriptions", "Account"]
-    
+    let titles = ["Create", "Made", "Favorites"]
+    var favPhotos = Photo.allFavorites()
+    var photos = Photo.allPhotos()
     //var photos = Photo.allPhotos()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         navigationController?.navigationBar.isTranslucent = false
-        
         let titleLabel = UILabel(frame: CGRect(x: 0, y: 0, width: view.frame.width - 32, height: view.frame.height))
-
         titleLabel.text = "  Home"
         titleLabel.textColor = UIColor.white
         titleLabel.font = UIFont.systemFont(ofSize: 20)
         navigationItem.titleView = titleLabel
-
-        setupCollectionView()
-        setupMenuBar()
-        setupNavBarButtons()
-        setupLRButtons()
-        
-        
-        if let testimage = UIImage(named: "PPAP")?.withRenderingMode(.alwaysOriginal){
-            print("test image ", testimage.size.width,testimage.size.height )
+        for i in favPhotos{
+            photos[i].isFav = true
         }
+
+        print("setupCollectionView() start")
+        setupCollectionView()
+        print("setupMenuBar() start")
+        setupMenuBar()
+        print("setupNavBarButtons() start")
+        setupNavBarButtons()
+        //setupLRButtons()
     }
     
     func setupCollectionView() {
@@ -50,9 +49,13 @@ class MainController: UICollectionViewController, UICollectionViewDelegateFlowLa
         }
         
         collectionView?.backgroundColor = UIColor.white
+        // Register PinCell, which is technically a UICollectionViewCell that is
+        //  the size of the screen (or in this case, the size of the screen minus the 
+        //  top navigation bar height).  In this big a** cell contains a UIView which then
+        //  contains another UICollectionView, which in this case follows the PinterestLayout
+        //  look and has all the meme blank templates 
         collectionView?.register(PinCell.self, forCellWithReuseIdentifier: cellId)
-        //collectionView?.register(TrendingCell.self, forCellWithReuseIdentifier: trendingCellId)
-        //collectionView?.register(SubscriptionCell.self, forCellWithReuseIdentifier: subscriptionCellId)
+        collectionView?.register(FavoritesCollectionView.self, forCellWithReuseIdentifier: favId)
         
         collectionView?.contentInset = UIEdgeInsetsMake(50, 0, 0, 0)
         collectionView?.scrollIndicatorInsets = UIEdgeInsetsMake(50, 0, 0, 0)
@@ -115,11 +118,11 @@ class MainController: UICollectionViewController, UICollectionViewDelegateFlowLa
     fileprivate func setupMenuBar() {
         navigationController?.hidesBarsOnSwipe = true
         
-        let redView = UIView()
-        redView.backgroundColor = UIColor.rgb(230, green: 32, blue: 31)
-        view.addSubview(redView)
-        view.addConstraintsWithFormat("H:|[v0]|", views: redView)
-        view.addConstraintsWithFormat("V:[v0(50)]", views: redView)
+        let colorView = UIView()
+        colorView.backgroundColor = UIColor.black
+        view.addSubview(colorView)
+        view.addConstraintsWithFormat("H:|[v0]|", views: colorView)
+        view.addConstraintsWithFormat("V:[v0(50)]", views: colorView)
         
         view.addSubview(menuBar)
         view.addConstraintsWithFormat("H:|[v0]|", views: menuBar)
@@ -128,34 +131,8 @@ class MainController: UICollectionViewController, UICollectionViewDelegateFlowLa
         menuBar.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
     }
     
-    lazy var rightButton: ButtonLauncher = {
-        let b = ButtonLauncher()
-        b.homeController = self
-        b.setFlag(flag: 1)
-        return b
-    }()
-    
-    lazy var leftButton: ButtonLauncher = {
-        let b = ButtonLauncher()
-        b.homeController = self
-        b.setFlag(flag: 0)
-        return b
-    }()
-    
-    fileprivate func setupLRButtons(){
-        rightButton.collectionView.layer.cornerRadius = 40
-        view.addSubview(rightButton)
-        view.addConstraintsWithFormat("H:[v0(80)]-16-|", views: rightButton)
-        view.addConstraintsWithFormat("V:[v0(80)]-16-|", views: rightButton)
-        
-        leftButton.collectionView.layer.cornerRadius = 40
-        view.addSubview(leftButton)
-        view.addConstraintsWithFormat("H:|-16-[v0(80)]", views: leftButton)
-        view.addConstraintsWithFormat("V:[v0(80)]-16-|", views: leftButton)
-    }
-    
     override func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        menuBar.horizontalBarLeftAnchorConstraint?.constant = scrollView.contentOffset.x / 4
+        menuBar.horizontalBarLeftAnchorConstraint?.constant = scrollView.contentOffset.x / 3
     }
     
     override func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
@@ -169,31 +146,32 @@ class MainController: UICollectionViewController, UICollectionViewDelegateFlowLa
     }
     
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 4
+        return 3
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
         let identifier: String
-   /*
         if indexPath.item == 1 {
-            identifier = trendingCellId
+            identifier = cellId
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath) as! PinCell
+            cell.mainController = self
+            return cell
         } else if indexPath.item == 2 {
-            identifier = subscriptionCellId
+            identifier = favId
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath) as! FavoritesCollectionView
+            cell.mainController = self
+            return cell
         } else {
             identifier = cellId
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath) as! PinCell
+            cell.mainController = self
+            return cell
         }
- */
-        identifier = cellId
-        
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath) as! PinCell
-        cell.mainController = self
-        return cell
     }
     
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        print("what is this returning cgsize for?")
         return CGSize(width: view.frame.width, height: view.frame.height - 50)
     }
 }
