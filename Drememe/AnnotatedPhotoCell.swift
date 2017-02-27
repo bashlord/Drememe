@@ -9,16 +9,22 @@
 import UIKit
 
 class AnnotatedPhotoCell: BaseCell {
-    
-    //fileprivate weak var imageView: UIImageView!
-    //fileprivate weak var imageViewHeightLayoutConstraint: NSLayoutConstraint!
-    //fileprivate weak var captionLabel: UILabel!
-    //fileprivate weak var commentLabel: UILabel!
-    
+
     var photo: Photo? {
         didSet {
             if let photo = photo {
                 imageView.image = photo.image
+                captionLabel.text = ""
+                commentLabel.text = ""
+                setupViews()
+            }
+        }
+    }
+    
+    var image: UIImage? {
+        didSet {
+            if let image = image {
+                imageView.image = image
                 captionLabel.text = ""
                 commentLabel.text = ""
                 setupViews()
@@ -53,17 +59,12 @@ class AnnotatedPhotoCell: BaseCell {
         super.apply(layoutAttributes)
         if let attributes = layoutAttributes as? PinterestLayoutAttributes {
             imageViewHeightLayoutConstraint?.constant = attributes.photoHeight
-            
-            //imageViewWidthLayoutConstraint?.constant = attributes.photoHeight
-            print("AnnotatedPhotoCell:: apply ", imageViewHeightLayoutConstraint?.constant)
-            
         }
     }
     
     override func setupViews() {
         super.setupViews()
         if photo != nil{
-            print("AnnotatedPhotoCell:: photo not null")
             imageView.image = photo?.image
             addSubview(imageView)
             addSubview(captionLabel)
@@ -72,19 +73,29 @@ class AnnotatedPhotoCell: BaseCell {
             imageViewHeightLayoutConstraint = NSLayoutConstraint(item: self, attribute: .height, relatedBy: .lessThanOrEqual, toItem: self, attribute: .height, multiplier: 1, constant: 0)
             addConstraint(imageViewHeightLayoutConstraint!)
             
-            
             imageViewWidthLayoutConstraint = NSLayoutConstraint(item: self, attribute: .width, relatedBy: .lessThanOrEqual, toItem: self, attribute: .width, multiplier: 1, constant: 0)
             addConstraint(imageViewWidthLayoutConstraint!)
-            
             
             addConstraintsWithFormat("H:|[v0]|", views: imageView)
             addConstraintsWithFormat("V:|[v0]|", views: imageView)
             addConstraintsWithFormat("H:|[v0]|", views: captionLabel)
             addConstraintsWithFormat("H:|[v0]|", views: commentLabel)
+        }else if image != nil{
+            addSubview(imageView)
+            addSubview(captionLabel)
+            addSubview(commentLabel)
             
+            imageViewHeightLayoutConstraint = NSLayoutConstraint(item: self, attribute: .height, relatedBy: .lessThanOrEqual, toItem: self, attribute: .height, multiplier: 1, constant: 0)
+            addConstraint(imageViewHeightLayoutConstraint!)
             
+            imageViewWidthLayoutConstraint = NSLayoutConstraint(item: self, attribute: .width, relatedBy: .lessThanOrEqual, toItem: self, attribute: .width, multiplier: 1, constant: 0)
+            addConstraint(imageViewWidthLayoutConstraint!)
+            
+            addConstraintsWithFormat("H:|[v0]|", views: imageView)
+            addConstraintsWithFormat("V:|[v0]|", views: imageView)
+            addConstraintsWithFormat("H:|[v0]|", views: captionLabel)
+            addConstraintsWithFormat("H:|[v0]|", views: commentLabel)
         }
-        
     }
 }
 

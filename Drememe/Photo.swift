@@ -60,23 +60,37 @@ class Photo {
     //let memeURLS = CFArray()
     class func allPhotos() -> [Photo] {
         var photos = [Photo]()
+        var i = 0
         if let URL = Bundle.main.url(forResource: "Photos", withExtension: "plist") {
             if let photosFromPlist = NSArray(contentsOf: URL) {
                 for dictionary in photosFromPlist {
                     let photo = Photo(dictionary: dictionary as! NSDictionary)
+                    photo.index = i
                     photos.append(photo)
-                    //print(dictionary)
+                    i += 1
                 }
             }
         }
         print("Photo::  allPhotos() returning")
         return photos
     }
+    
+    class func allFavorites() -> [Int]{
+        var favs = [Int]()
+        let dictionary = PlistManager.sharedInstance.getPlist(flag: 0)
+        for val in dictionary.allValues{
+            favs.append((val as? Int)!)
+            print((val as? Int)!)
+        }
+        return favs
+    }
 
     var image: UIImage
     var path: String
     var style: String
     var params = [Param]()
+    var index = 0
+    var isFav = false
     init(image: UIImage, path:String, p:[Param], s:String) {
         self.image = image
         self.path = path
@@ -93,7 +107,6 @@ class Photo {
             let ps = dictionary["Param"] as? NSArray
             for dict in ps!{
                 let p = Param(dictionary: dict as! NSDictionary)
-                //print(p)
                 params.append(p)
             }
         }
@@ -105,4 +118,15 @@ class Photo {
         return ceil(rect.height)
     }
     
+    func toggleFav(){
+        if isFav == true{
+            isFav = false
+        }else{
+            isFav = true
+        }
+    }
+    
+    func isFaved() -> Bool{
+        return isFav
+    }
 }

@@ -30,6 +30,25 @@ extension MemeEditLauncher{
         }
     }
     
+    func areTextViewsSet() -> Bool {
+        if self.topText.text.isEmpty || self.bottomText.text.isEmpty{
+            return false
+        }
+        
+        //I realize that this is a hacky way of checking, will prob
+        //  need to have an iterative way implemented lateer
+        
+        //if third/fourth textView exists, but has empty text
+        if self.thirdTextView != nil && self.thirdTextView.text.isEmpty{
+            return false
+        }
+        if self.fourthTextView != nil && self.fourthTextView.text.isEmpty{
+            return false
+        }
+        
+        return true
+    }
+    
     func getCustomTextViews(n: Int){
         customTextViews.append(topText)
         if params.count > 1{
@@ -45,6 +64,10 @@ extension MemeEditLauncher{
         }
     }
     
+    // The difference between default and 2panel is that
+    //  a default would have textviews aligning with the top
+    //  and bottom of an image while 2panel aligns with the top
+    //  and the center of an image
     func twoPanelTextViewAnimation(phase: Int){
         if phase == 0{
             topText.frame = CGRect(x: 0, y: 0 - ((2*imageView.frame.height)/5), width: imageView.frame.width, height: ((2*imageView.frame.height)/5))

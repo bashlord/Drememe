@@ -21,7 +21,7 @@ class Button: NSObject {
 
 class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     let cellId = "cellId"
-    let imageNames = ["left", "right", "cancel", "check", "delete", "clear", "save", "unstar", "star"]
+    let imageNames = ["left", "right", "cancel", "check", "delete", "clear", "save", "unstar", "star", "cancel"]
     lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -35,6 +35,7 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
     var memeLauncher: MemeLauncher?
     var memeEditLauncher: MemeEditLauncher?
     var favoritesCollectionView: FavoritesCollectionView?
+    var createdCollectionView: CreatedCollectionView?
     var flag: Int!// 0 for left, 1 for right
     
     override init(frame: CGRect) {
@@ -60,7 +61,10 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
     
     func setupButton(){
         let button = UIView()
-        if flag == 2{
+        
+        if flag == 9{
+            collectionView.backgroundColor = UIColor.red
+        }else if flag == 2{
             collectionView.backgroundColor = UIColor.red
         }else if flag == 3{
             collectionView.backgroundColor = UIColor.green
@@ -97,9 +101,6 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
             if flag == 2{
                 print("Cancel pressed")
                 memeLauncher?.handleCancel()
-            }else if flag == 3{
-                print("Check pressed")
-                memeLauncher?.handleEdit()
             }
         }else{
             // while editing memeView buttons

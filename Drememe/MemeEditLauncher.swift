@@ -73,11 +73,29 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
     var customTextViews = [UITextView]()
     //not sure if i need this
     var selectedTextView: UITextView?
+    var index = 0
+    
+    var pinCell: PinCell?
+    var favoriteCollectionView: FavoritesCollectionView?
     
     var image: UIImage? {
         didSet {
             if let image = image{
                 self.image = image
+            }
+        }
+    }
+    var favButton: ButtonLauncher?
+    var isFav: Bool?{
+        didSet{
+            if isFav!{
+                favButton = ButtonLauncher()
+                favButton?.memeEditLauncher = self
+                favButton?.setFlag(flag: 8)
+            }else{
+                favButton = ButtonLauncher()
+                favButton?.memeEditLauncher = self
+                favButton?.setFlag(flag: 7)
             }
         }
     }
@@ -164,9 +182,11 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
             if flag == 0{//toggle in
                 self.cancelButton.frame.origin.x += 96
                 self.startButton.frame.origin.x -= 176
+                self.favButton!.frame.origin.y -= 96
             }else{//toggle out
                 self.cancelButton.frame.origin.x -= 96
                 self.startButton.frame.origin.x += 176
+                self.favButton!.frame.origin.y += 96
             }
         }) { (completed: Bool) in }
     }
@@ -200,6 +220,10 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
         self.cancelButton.collectionView.layer.cornerRadius = 40
         self.cancelButton.frame = CGRect(x: 0 - 80, y: (keyFrame.height)-96, width: 80, height: 80)
         self.view.addSubview(self.cancelButton)
+        
+        self.favButton?.collectionView.layer.cornerRadius = 40
+        self.favButton?.frame = CGRect(x: (keyFrame.width/2) - 40, y: (keyFrame.height), width: 80, height: 80)
+        self.view.addSubview(self.favButton!)
         
         //left bottom +175
         self.sCancelButton.collectionView.layer.cornerRadius = 40
@@ -388,7 +412,45 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
     }
     
     func handleSave(){
-        memify(img: self.originalImage!, textView1: self.topText, textView2: self.bottomText)
+        
+        if areTextViewsSet(){
+            var texts = [String]()
+            texts.append(topText.text)
+            texts.append(bottomText.text)
+            if thirdTextView != nil{
+                texts.append(thirdTextView.text)
+            }
+            if fourthTextView != nil{
+                texts.append(fourthTextView.text)
+            }
+            
+            let meme = Memifier.sharedInstance.createImage(orgImage: self.originalImage!, style: self.styleType, params: self.params, texts: texts)
+            UIImageWriteToSavedPhotosAlbum(meme, self, #selector(image(_:didFinishSavingWithError:contextInfo:)), nil)
+            //memify(img: self.originalImage!, textView1: self.topText, textView2: self.bottomText)
+        }else{
+            let alertController = UIAlertController(title: "Fill out the Memes", message: "Requires more dank.", preferredStyle: UIAlertControllerStyle.alert)
+            let okAction = UIAlertAction(title: "OK", style: UIAlertActionStyle.default) {
+                (result : UIAlertAction) -> Void in
+                print("OK")
+            }
+            
+            alertController.addAction(okAction)
+            (UIApplication.shared.delegate as! AppDelegate).window?.rootViewController?.present(alertController, animated: true, completion: nil)
+        }
+    }
+    
+    func handleFav(flag: Int){
+        if flag == 0{// add as favorite
+            PlistManager.sharedInstance.addNewItemWithKey( key: String(index), value: index as AnyObject, flag: 0)
+            
+        }else{// remove from favorites
+            PlistManager.sharedInstance.removeItemForKey(key: String(index), flag: 0)
+        }
+        if pinCell != nil{
+            pinCell?.toggleFavorite(index: index)
+        }else{
+            //need to call toggle in favoriteCollectionView
+        }
     }
     
     func dismissKeyboard() {
@@ -614,17 +676,29 @@ extension MemeEditLauncher {
     func memify(img: UIImage, textView1: UITextView, textView2: UITextView){
         let originalImg = img
         //print("Original Image size/width/height ", originalImg.size, originalImg.size.width, originalImg.size.height)
+        let imageView = UIImageView(frame: CGRect(origin: .zero, size: originalImg.size))
+        imageView.image = originalImg
+        topText.backgroundColor = UIColor(white: 0, alpha: 0)
+        imageView.addSubview(topText)
         UIGraphicsBeginImageContext(originalImg.size)
-        originalImg.draw(in: CGRect(origin: .zero, size: originalImg.size))
         
+        
+        //originalImg.draw(in: CGRect(origin: .zero, size: originalImg.size))
+        //textView1.backgroundColor = UIColor(white: 0, alpha: 0)
+        //textView1.layer.draw(in: CGRect(x: 50, y: 50, width: 100, height: 100) as! CGContext)
         let context = UIGraphicsGetCurrentContext()
+        
+        imageView.layer.render(in: context!)
+        
         if context == nil{
             print("memify failed, nil context")
         }else{
             print("memify has a context...")
-            textView1.layer.render(in: context!)
-            textView2.layer.render(in: context!)
+        
+            //textView1.layer.render(in: context!)
+            //textView2.layer.render(in: context!)
             let image = UIGraphicsGetImageFromCurrentImageContext()
+            
             UIImageWriteToSavedPhotosAlbum(image!, self, #selector(image(_:didFinishSavingWithError:contextInfo:)), nil)
         }
     }

@@ -16,6 +16,18 @@ class MainController: UICollectionViewController, UICollectionViewDelegateFlowLa
     let favId = "favId"
     
     let titles = ["Create", "Made", "Favorites"]
+    
+    // a bit of a tricky method, but this will be returning an array of integers
+    //  which simply act as unique keys, as well as names for saved created jpg images.
+    //  Regardless of position, for example if 4 photos are made(and using 0 based indexing), 
+    //  and photo 1 is deleted, photo 2 and 3 will and shall not be shifted backwards.  
+    //  Ah!  Just realized that the FIFO issue occurs since suppose that images were being created
+    //  as well as destroyed in the FIFO ---- nevermind, regardless of a FIFO situation, the last 
+    //  integer in the array can and will always be the largest unique key so far
+    
+
+    var createdPhotos = CreatedPhotosManager()
+    
     var favPhotos = Photo.allFavorites()
     var photos = Photo.allPhotos()
     //var photos = Photo.allPhotos()
@@ -154,8 +166,9 @@ class MainController: UICollectionViewController, UICollectionViewDelegateFlowLa
         let identifier: String
         if indexPath.item == 1 {
             identifier = cellId
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath) as! PinCell
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath) as! CreatedCollectionView
             cell.mainController = self
+            print("MainController:: does PinCell get reinitialized every time?")
             return cell
         } else if indexPath.item == 2 {
             identifier = favId
@@ -166,6 +179,7 @@ class MainController: UICollectionViewController, UICollectionViewDelegateFlowLa
             identifier = cellId
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath) as! PinCell
             cell.mainController = self
+            print("MainController:: does PinCell get reinitialized every time?")
             return cell
         }
     }
