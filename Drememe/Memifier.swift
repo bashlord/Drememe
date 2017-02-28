@@ -73,13 +73,22 @@ class Memifier{
             tv.textAlignment = .center
             tv.autocapitalizationType = UITextAutocapitalizationType.allCharacters
             currentFontSize += 1
-            while tv.contentSize.height < tv.frame.size.height && currentFontSize < 100{
+            while tv.contentSize.height < tv.frame.size.height && currentFontSize < 60{
                 tv.attributedText = resizeFont(str: texts[i],fontSize: CGFloat(currentFontSize))
                 tv.textAlignment = .center
                 tv.autocapitalizationType = UITextAutocapitalizationType.allCharacters
                 currentFontSize += 1
             }
+            while tv.contentSize.height > tv.frame.size.height && currentFontSize > 20{
+                tv.attributedText = resizeFont(str: texts[i],fontSize: CGFloat(currentFontSize))
+                tv.textAlignment = .center
+                tv.autocapitalizationType = UITextAutocapitalizationType.allCharacters
+                currentFontSize -= 1
+            }
             print("Current font size set at ", currentFontSize)
+            if style == 0 && i == 1 && tv.contentSize.height < tv.frame.size.height{
+                tv.frame.origin.y += (tv.frame.size.height - tv.contentSize.height)
+            }
             imageView.addSubview(tv)
             i += 1
         }

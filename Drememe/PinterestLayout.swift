@@ -62,6 +62,10 @@ class PinterestLayout: UICollectionViewFlowLayout {
         return cache.count
     }
     
+    func resetCache(){
+        self.cache.removeAll()
+    }
+    
     override class var layoutAttributesClass : AnyClass {
         return PinterestLayoutAttributes.self
     }
