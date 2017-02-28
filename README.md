@@ -1,5 +1,8 @@
 # Drememe
 Extension of my CIDCollectionView Module, done entirely programmatically just to practice MVC and not rely on Storyboard.
+Final showcase of Drememe (now attempting publishing):
+https://youtu.be/RzXpabtYkJI
+
 
 Sample of some basic animations implemented programmatically with constraints/NSLayouts:
 https://youtu.be/sytrEBb4jRQ
