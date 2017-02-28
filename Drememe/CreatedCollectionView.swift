@@ -104,22 +104,32 @@ class CreatedCollectionView: BaseCell, UICollectionViewDataSource, UICollectionV
             self.collectionView.collectionViewLayout = PinterestLayout()
             (self.collectionView.collectionViewLayout as! PinterestLayout).delegate = self
             print("does it prepare here?")
-            self.setupLRButtons()
+            //self.setupLRButtons()
+        }
+    }
+    
+    func reloadLayout(){
+        if self.collectionView.collectionViewLayout is PinterestLayout {
+            //self.collectionView.collectionViewLayout = PinterestLayout()
+            //(self.collectionView.collectionViewLayout as! PinterestLayout).delegate = self
+            print("CreateCollectionView layout reloaded")
+            //self.setupLRButtons()
         }
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         // 288 default mainController?.photos total
         // 24 images by 12?
-        if mainController == nil{
-            return 0
-        }else{
-            if (mainController?.createdPhotos.getCount())! < 24 {
-                return (mainController?.createdPhotos.getCount())!
-            }else{
-                return 24
-            }
-        }
+        
+        //if mainController == nil{
+        //    return 0
+        //}else{
+        //    if (mainController?.createdPhotos.getCount())! < 24 {
+        return (mainController?.createdPhotos.getCount())!
+        //    }else{
+        //        return 24
+        //    }
+        //}
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -130,11 +140,12 @@ class CreatedCollectionView: BaseCell, UICollectionViewDataSource, UICollectionV
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print("item selected at " ,(pageIndex*24)+indexPath.item)
+        print("item selected at " ,indexPath.item)
         let memeLauncher = MemeLauncher()
         memeLauncher.image = mainController?.createdPhotos.getOriginalImage(index: indexPath.item)
         //memeLauncher.path = mainController?.photos[index].path
         memeLauncher.createdCollectionView = self
+        memeLauncher.path = mainController?.createdPhotos.getPath(index: indexPath.item)
         memeLauncher.expandMemeView()
     }
     
@@ -147,22 +158,16 @@ class CreatedCollectionView: BaseCell, UICollectionViewDataSource, UICollectionV
 extension CreatedCollectionView : PinterestLayoutDelegate {
     // 1. Returns the photo height
     func collectionView(_ collectionView:UICollectionView, heightForPhotoAtIndexPath indexPath:IndexPath , withWidth width:CGFloat) -> CGFloat {
-        let index = mainController?.favPhotos[(pageIndex*24)+indexPath.item]
-        let photo = mainController?.photos[index!]
+        //let index = mainController?.createdPhotos.getAnnotatedImage(index: indexPath.item)// favPhotos[indexPath.item]
+        let photo = mainController?.createdPhotos.getAnnotatedImage(index: indexPath.item)
         let boundingRect =  CGRect(x: 0, y: 0, width: width, height: CGFloat(MAXFLOAT))
-        let rect  = AVMakeRect(aspectRatio: (photo?.image.size)!, insideRect: boundingRect)
+        let rect  = AVMakeRect(aspectRatio: (photo?.size)!, insideRect: boundingRect)
         return rect.size.height
     }
     
     // 2. Returns the annotation size based on the text
     func collectionView(_ collectionView: UICollectionView, heightForAnnotationAtIndexPath indexPath: IndexPath, withWidth width: CGFloat) -> CGFloat {
-        let annotationPadding = CGFloat(4)
-        let annotationHeaderHeight = CGFloat(17)
-        let index = mainController?.favPhotos[(pageIndex*24)+indexPath.item]
-        let photo = mainController?.photos[index!]
-        let font = UIFont(name: "AvenirNext-Regular", size: 10)!
-        let commentHeight = photo?.heightForComment(font, width: width)
-        let height = annotationPadding + annotationHeaderHeight + commentHeight! + annotationPadding
-        return height
+        
+        return 0
     }
 }

@@ -40,7 +40,7 @@ class PinterestLayoutAttributes:UICollectionViewLayoutAttributes {
 
 
 class PinterestLayout: UICollectionViewFlowLayout {
-    var page = 0
+    var page = -1
     //1. Pinterest Layout Delegate
     var delegate:PinterestLayoutDelegate!
     
@@ -67,9 +67,11 @@ class PinterestLayout: UICollectionViewFlowLayout {
     }
     
     override func prepare() {
+        print("PinterestLayout:: prepare() called")
         // 1. Only calculate once
-        if cache.isEmpty {
-            print("PinterestLayout:: prepare() isEmpty being clled?")
+        //if cache.isEmpty {
+        if cache.count < collectionView!.numberOfItems(inSection: 0) || cache.isEmpty{
+            print("PinterestLayout:: prepare() isEmpty being clled?", page, cache.count, collectionView!.numberOfItems(inSection: 0))
             // 2. Pre-Calculates the X Offset for every column and adds an array to increment the currently max Y Offset for each column
             let columnWidth = contentWidth / CGFloat(numberOfColumns)
             var xOffset = [CGFloat]()
@@ -78,9 +80,12 @@ class PinterestLayout: UICollectionViewFlowLayout {
             }
             var column = 0
             var yOffset = [CGFloat](repeating: 0, count: numberOfColumns)
-            
+            var i = 0
+            if !cache.isEmpty{
+                cache.removeAll()
+            }
             // 3. Iterates through the list of items in the first section
-            for item in 0 ..< collectionView!.numberOfItems(inSection: 0) {
+            for item in i ..< collectionView!.numberOfItems(inSection: 0) {
                 
                 let indexPath = IndexPath(item: item, section: 0)
                 
@@ -111,11 +116,45 @@ class PinterestLayout: UICollectionViewFlowLayout {
                 //column = column >= (numberOfColumns - 1) ? 0 : ++column
                 
             }
+        }else if cache.count > collectionView!.numberOfItems(inSection: 0){
+            print("PinterestLayout:: prepare() cache size > collectionView size", page, cache.count, collectionView!.numberOfItems(inSection: 0))
+            let columnWidth = contentWidth / CGFloat(numberOfColumns)
+            var xOffset = [CGFloat]()
+            for column in 0 ..< numberOfColumns {
+                xOffset.append(CGFloat(column) * columnWidth )
+            }
+            var column = 0
+            var yOffset = [CGFloat](repeating: 0, count: numberOfColumns)
+            var i = 0
+            if !cache.isEmpty{
+                cache.removeAll()
+            }
+            for item in i ..< collectionView!.numberOfItems(inSection: 0) {
+                let indexPath = IndexPath(item: item, section: 0)
+                let width = columnWidth - cellPadding*2
+                let photoHeight = delegate.collectionView(collectionView!, heightForPhotoAtIndexPath: indexPath , withWidth:width)
+                let annotationHeight = delegate.collectionView(collectionView!, heightForAnnotationAtIndexPath: indexPath, withWidth: width)
+                let height = cellPadding +  photoHeight + annotationHeight + cellPadding
+                let frame = CGRect(x: xOffset[column], y: yOffset[column], width: columnWidth, height: height)
+                let insetFrame = frame.insetBy(dx: cellPadding, dy: cellPadding)
+                let attributes = PinterestLayoutAttributes(forCellWith: indexPath)
+                attributes.photoHeight = photoHeight
+                attributes.frame = insetFrame
+                cache.append(attributes)
+                contentHeight = max(contentHeight, frame.maxY)
+                yOffset[column] = yOffset[column] + height
+                //column += 1
+                if column >= (numberOfColumns - 1){
+                    column = 0
+                }else{
+                    column += 1
+                }
+            }
         }
     }
     
     override var collectionViewContentSize : CGSize {
-        print("PinterestLayout CGSize() called", contentWidth, contentHeight)
+        //print("PinterestLayout CGSize() called", contentWidth, contentHeight)
         return CGSize(width: contentWidth, height: contentHeight)
     }
     

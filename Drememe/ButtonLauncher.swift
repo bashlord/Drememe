@@ -21,7 +21,10 @@ class Button: NSObject {
 
 class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     let cellId = "cellId"
-    let imageNames = ["left", "right", "cancel", "check", "delete", "clear", "save", "unstar", "star", "cancel"]
+    // rows of 5
+    let imageNames = ["left", "right", "cancel", "check", "delete",
+                      "clear", "save", "unstar", "star", "cancel",
+                      "delete-trans"]
     lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -75,9 +78,11 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
         }else if flag == 6{//smaller save
             collectionView.backgroundColor = UIColor.green
         }else if flag == 7{//set fav
-            collectionView.backgroundColor = UIColor.white
+            collectionView.backgroundColor = UIColor.rgb(192, green: 192, blue: 192)
         }else if flag == 8{//is saved
-            collectionView.backgroundColor = UIColor.yellow
+            collectionView.backgroundColor = UIColor.rgb(192, green: 192, blue: 192)
+        }else if flag == 10{//transparent delete
+            collectionView.backgroundColor = UIColor.rgb(255, green: 51, blue: 51)
         }else{
             collectionView.backgroundColor = UIColor.white
         }
@@ -99,8 +104,11 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
         }else if (memeLauncher != nil){
             //initial memeView buttons
             if flag == 2{
-                print("Cancel pressed")
+                print("MemeLauncher:: Cancel pressed")
                 memeLauncher?.handleCancel()
+            }else if flag == 10{
+                print("MemeLauncher:: Delete pressed")
+                memeLauncher?.handleDelete()
             }
         }else{
             // while editing memeView buttons
@@ -124,14 +132,11 @@ class ButtonLauncher: UIView, UICollectionViewDataSource, UICollectionViewDelega
                 memeEditLauncher?.handleFav(flag: 0)
                 flag = 8
                 collectionView.reloadItems(at: [indexPath])
-                //collectionView.item
-                //cell.imageView.image = UIImage(named: imageNames[flag])
             }else if flag == 8{// unset template from favorites, initially fav
                 print("Meme Unset as Favorite")
                 memeEditLauncher?.handleFav(flag: 1)
                 flag = 7
                 collectionView.reloadItems(at: [indexPath])
-                //cell.imageView.image = UIImage(named: imageNames[flag])
             }
         }
     }

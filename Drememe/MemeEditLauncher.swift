@@ -182,11 +182,13 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
             if flag == 0{//toggle in
                 self.cancelButton.frame.origin.x += 96
                 self.startButton.frame.origin.x -= 176
-                self.favButton!.frame.origin.y -= 96
+                //self.favButton!.frame.origin.y = self.view.frame.height - 96
+                self.favButton!.frame.origin.y -= 96 + self.heightOffset
             }else{//toggle out
                 self.cancelButton.frame.origin.x -= 96
                 self.startButton.frame.origin.x += 176
-                self.favButton!.frame.origin.y += 96
+                //self.favButton!.frame.origin.y = self.view.frame.height
+                self.favButton!.frame.origin.y += 96 + self.heightOffset
             }
         }) { (completed: Bool) in }
     }
@@ -222,7 +224,7 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
         self.view.addSubview(self.cancelButton)
         
         self.favButton?.collectionView.layer.cornerRadius = 40
-        self.favButton?.frame = CGRect(x: (keyFrame.width/2) - 40, y: (keyFrame.height), width: 80, height: 80)
+        self.favButton?.frame = CGRect(x: (keyFrame.width/2) - 40, y: (keyFrame.height)+heightOffset, width: 80, height: 80)
         self.view.addSubview(self.favButton!)
         
         //left bottom +175
@@ -283,7 +285,7 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
             keyWindow.addSubview(view)
             
             let tempFrame = CGRect(x: 0, y: 0, width: keyWindow.frame.width, height: keyWindow.frame.height)
-            UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
+            UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
                 self.view.frame = tempFrame
             }, completion: { (completedAnimation) in
                 //maybe we'll do something here later...
@@ -406,8 +408,14 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
     
     func handleClear(){
         //if self.topText.text != "TOP" || self.bottomText.text != "BOTTOM"{
-            self.topText.text = ""
-            self.bottomText.text = ""
+        self.topText.text = ""
+        self.bottomText.text = ""
+        if self.thirdTextView != nil{
+            self.thirdTextView.text = ""
+        }
+        if self.fourthTextView != nil{
+            self.fourthTextView.text = ""
+        }
         //}
     }
     
@@ -426,6 +434,14 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
             
             let meme = Memifier.sharedInstance.createImage(orgImage: self.originalImage!, style: self.styleType, params: self.params, texts: texts)
             UIImageWriteToSavedPhotosAlbum(meme, self, #selector(image(_:didFinishSavingWithError:contextInfo:)), nil)
+            if pinCell != nil{
+                pinCell?.mainController?.createdPhotos.addNewCreated(image: meme)
+            }else if favoriteCollectionView != nil{
+                favoriteCollectionView?.mainController?.createdPhotos.addNewCreated(image: meme)
+            }
+            handleCancel(flag: 1)
+            handleCancel(flag: 0)
+            
             //memify(img: self.originalImage!, textView1: self.topText, textView2: self.bottomText)
         }else{
             let alertController = UIAlertController(title: "Fill out the Memes", message: "Requires more dank.", preferredStyle: UIAlertControllerStyle.alert)
@@ -443,8 +459,34 @@ class MemeEditLauncher: NSObject, UITextViewDelegate {
         if flag == 0{// add as favorite
             PlistManager.sharedInstance.addNewItemWithKey( key: String(index), value: index as AnyObject, flag: 0)
             
+            if pinCell != nil{
+                pinCell?.mainController?.favPhotos.append(index)
+                pinCell?.collectionView.reloadData()
+            }else if favoriteCollectionView != nil{
+                favoriteCollectionView?.mainController?.favPhotos.append(index)
+                favoriteCollectionView?.collectionView.reloadData()
+            }
         }else{// remove from favorites
             PlistManager.sharedInstance.removeItemForKey(key: String(index), flag: 0)
+            if pinCell != nil{
+                for x in 0...(pinCell?.mainController?.favPhotos.count)!{
+                    if pinCell?.mainController?.favPhotos[x] == index{
+                        pinCell?.mainController?.favPhotos.remove(at: x)
+                        break
+                    }
+                }
+                pinCell?.collectionView.reloadData()
+                //pinCell?.mainController?.favPhotos.append(index)
+            }else if favoriteCollectionView != nil{
+                for x in 0...(favoriteCollectionView?.mainController?.favPhotos.count)!{
+                    if favoriteCollectionView?.mainController?.favPhotos[x] == index{
+                        favoriteCollectionView?.mainController?.favPhotos.remove(at: x)
+                        break
+                    }
+                }
+                favoriteCollectionView?.collectionView.reloadData()
+                //favoriteCollectionView?.mainController?.favPhotos.append(index)
+            }
         }
         if pinCell != nil{
             pinCell?.toggleFavorite(index: index)
@@ -706,9 +748,12 @@ extension MemeEditLauncher {
     func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
         if let error = error {
             // we got back an error!
+            print("Error with saving photo")
             let ac = UIAlertController(title: "Save error", message: error.localizedDescription, preferredStyle: .alert)
             ac.addAction(UIAlertAction(title: "OK", style: .default))
+            
         } else {
+            print("Photo saved")
             let ac = UIAlertController(title: "Saved!", message: "Your altered image has been saved to your photos.", preferredStyle: .alert)
             ac.addAction(UIAlertAction(title: "OK", style: .default))
         }

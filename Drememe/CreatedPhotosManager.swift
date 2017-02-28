@@ -38,6 +38,10 @@ class CreatedPhotosManager{
     var photos = [PhotoNode]()
     init() {
         self.photos = allCreatedPaths()
+        self.photos.sort(by: { $0.indexPath < $1.indexPath })
+        for p in self.photos{
+            print("Init CreatedPhotosManager ",p.indexPath, p.path)
+        }
     }
     
     class func allCreated() -> [Int]{
@@ -60,6 +64,7 @@ class CreatedPhotosManager{
             let comImg = (FileSystemManager.sharedInstance.getImage(name: "\(i).jpg")).decompressedImage
             pn.append(PhotoNode(path: i, c: image, o: comImg))
         }
+        //pn.sorted(by: { $0.indexPath < $1.indexPath })
         return pn
     }
     
@@ -69,6 +74,10 @@ class CreatedPhotosManager{
     
     func getAnnotatedImage(index: Int) -> UIImage {
         return self.photos[index].compImage
+    }
+    
+    func getPath(index: Int) -> String{
+        return self.photos[index].path
     }
     
     func getNewPathIndex() -> Int{
@@ -81,6 +90,45 @@ class CreatedPhotosManager{
     
     func getCount() -> Int{
         return photos.count
+    }
+    
+    func getIndexForValue(path:String) -> Int{
+        for p in 0...photos.count{
+            if photos[p].path == path{
+                return p
+            }
+        }
+        return -1
+    }
+    
+    func addNewCreated(image: UIImage){
+        let node = PhotoNode(path: getNewPathIndex(), c: image.decompressedImage, o: image)
+        PlistManager.sharedInstance.addNewItemWithKey(key: node.path, value: node.indexPath as? Any as AnyObject, flag: 1)
+        FileSystemManager.sharedInstance.saveImageDocumentDirectory(image: image, name: node.path+".jpg")
+        print("number of photos in CreatedPhotoManager ", photos.count)
+        for p in photos{
+            print(p.indexPath, p.path)
+        }
+        print("Saving new created image with path ", node.indexPath, node.path )
+        photos.append(node)
+    }
+    
+    func removeCreated(path:String) -> Bool{
+        print("CreatedPhotosManager:: ")
+        PlistManager.sharedInstance.removeItemForKey(key: path, flag: 1)
+        print("    removeItemForKey() done")
+        FileSystemManager.sharedInstance.removeImage(name: path+".jpg")
+        print("    removeImage() done")
+        let index = getIndexForValue(path: path)
+        if index != -1{
+            print("   removed created photo with path ", path)
+            self.photos.remove(at: index)
+            return true
+        }else{
+            print("   could not find created photo with path ", path)
+            return false
+        }
+        
     }
 
 }
