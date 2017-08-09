@@ -26,6 +26,13 @@ extension UIView {
         
         addConstraints(NSLayoutConstraint.constraints(withVisualFormat: format, options: NSLayoutFormatOptions(), metrics: nil, views: viewsDictionary))
     }
+    
+    func removeAllConstraints() {
+        for c in self.constraints{
+            
+            self.removeConstraint(c)
+        }
+    }
 }
 
 
@@ -64,7 +71,7 @@ class CustomImageView: UIImageView {
         URLSession.shared.dataTask(with: url!, completionHandler: { (data, respones, error) in
             
             if error != nil {
-                print(error)
+                print(error ?? "error in Extentions:CustomImageView::loadImageUsingUrlString()")
                 //print("loadImage error, early return")
                 return
             }

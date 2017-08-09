@@ -64,6 +64,14 @@ extension MemeEditLauncher{
         }
     }
     
+    ////////////////////////////////////////////////////////////////
+    ////////////// TEXTVIEW ANIMATIONS//////////////////////////
+    // Specifically tuned animations using the original image's
+    //  width and height and scalar algebra to apply simple
+    //  but specified animations for textViews to position themselves
+    //  where appropriate, depending on the template
+    ////////////////////////////////////////////////////////
+    
     // The difference between default and 2panel is that
     //  a default would have textviews aligning with the top
     //  and bottom of an image while 2panel aligns with the top
@@ -163,43 +171,27 @@ extension MemeEditLauncher{
             getCustomTextViews(n: params.count)
             var i = 0
             for textView in customTextViews{
-                //textView.frame = CGRect(x: params[i].o_w, y: params[i].o_h, width: params[i].w, height: params[i].h)
                 textView.frame = CGRect(x: params[i].o_w, y: -params[i].h, width: params[i].w, height: params[i].h)
                 textView.contentSize.height = textView.frame.height
                 textView.contentSize.width = textView.frame.width
                 self.view.addSubview(textView)
                 i += 1
             }
-            /*
-            topText.frame = CGRect(x: 0, y: 0 - ((2*imageView.frame.height)/5), width: imageView.frame.width, height: ((2*imageView.frame.height)/5))
-            bottomText.frame = CGRect(x: 0, y: 0 - ((2*imageView.frame.height)/5), width: imageView.frame.width, height: ((2*imageView.frame.height)/5))
-            topText.contentSize.height = topText.frame.height
-            topText.contentSize.width = topText.frame.width
-            bottomText.contentSize.height = topText.frame.height
-            bottomText.contentSize.width = bottomText.frame.width
-            self.view.addSubview(topText)
-            self.view.addSubview(bottomText)
-             */
+            
         }else if phase == 1{
-            //topText.frame.origin.y += self.heightOffset + self.topText.frame.height
-            //bottomText.frame.origin.y += self.heightOffset + self.topText.frame.height + (1.5 * self.topText.frame.height)
+            
             var i = 0
             for textView in customTextViews{
                 textView.frame.origin.y += self.heightOffset + textView.frame.height + params[i].o_h
                 i += 1
             }
         }else if phase == 2{
-            //self.topText.frame.origin.y -= self.topText.frame.height
-            //self.bottomText.frame.origin.y -= self.topText.frame.height + (1.5 * self.topText.frame.height)
             var i = 0
             for textView in customTextViews{
                 textView.frame.origin.y -= textView.frame.height + textView.frame.origin.y
                 i += 1
             }
         }else if phase == 3{
-            //self.topText.removeFromSuperview()
-            //self.bottomText.removeFromSuperview()
-            
             for textView in customTextViews{
                 textView.removeFromSuperview()
             }
@@ -227,7 +219,4 @@ extension MemeEditLauncher{
             self.bottomText.removeFromSuperview()
         }
     }
-
-    
-    
 }

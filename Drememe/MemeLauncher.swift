@@ -62,7 +62,7 @@ class MemeLauncher: NSObject {
             }else{//toggle outside of the view
                 self.cancelButton.frame.origin.x -= 96
                 self.deleteButton.frame.origin.x += 176
-
+                
             }
         }) { (completed: Bool) in }
     }
@@ -99,7 +99,7 @@ class MemeLauncher: NSObject {
             self.view.alpha = 0
             if let window = UIApplication.shared.keyWindow {
                 self.view.frame = CGRect(x: 0, y: window.frame.height,
-                width: self.view.frame.width, height: self.view.frame.height)
+                                         width: self.view.frame.width, height: self.view.frame.height)
             }
             
         }) { (completed: Bool) in }

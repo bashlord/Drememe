@@ -10,7 +10,6 @@ import AVFoundation
 import UIKit
 
 class FavoritesCollectionView: BaseCell, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
-
     let cellId = "AnnotatedPhotoCell"
     var mainController: MainController?
     // 12 pages total for default
@@ -100,43 +99,30 @@ class FavoritesCollectionView: BaseCell, UICollectionViewDataSource, UICollectio
         addConstraintsWithFormat("H:|[v0]|", views: collectionView)
         addConstraintsWithFormat("V:|[v0]|", views: collectionView)
         collectionView.register(AnnotatedPhotoCell.self, forCellWithReuseIdentifier: cellId)
-        
-        //collectionView.register(AnnotatedPhotoCell.self, forCellWithReuseIdentifier: cellId)
         if self.collectionView.collectionViewLayout is PinterestLayout {
             self.collectionView.collectionViewLayout = PinterestLayout()
             (self.collectionView.collectionViewLayout as! PinterestLayout).delegate = self
             print("does it prepare here?")
-            self.setupLRButtons()
         }
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        // 288 default mainController?.photos total
-        // 24 images by 12?
-        if mainController == nil{
-            return 0
-        }else{
-            if (mainController?.favPhotos.count)! < 24 {
-                return (mainController?.favPhotos.count)!
-            }else{
-                return 24
-            }
-        }
+        return (mainController?.favPhotos.count)!
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        var offsetIndexPath = indexPath
+        _ = indexPath
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "AnnotatedPhotoCell", for: indexPath) as! AnnotatedPhotoCell
         //print("Post IndexPath cellForItemAt: ", indexPath.item, indexPath.section, indexPath.row)
-        cell.photo = mainController?.photos[(mainController?.favPhotos[ (pageIndex*24)+indexPath.item])!]
+        cell.photo = mainController?.photos[(mainController?.favPhotos[indexPath.item])!]
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print("item selected at " ,(pageIndex*24)+indexPath.item)
+        print("item selected at " ,indexPath.item)
         let memeLauncher = MemeEditLauncher()
-        let index = (mainController?.favPhotos[ (pageIndex*24)+indexPath.item])!
-        memeLauncher.image = mainController?.photos[index].image
+        let index = (mainController?.favPhotos[indexPath.item])!
+        //memeLauncher.image = mainController?.photos[index].image
         memeLauncher.path = mainController?.photos[index].path
         memeLauncher.params = (mainController?.photos[index].params)!
         let style = mainController?.photos[index].style
@@ -153,6 +139,9 @@ class FavoritesCollectionView: BaseCell, UICollectionViewDataSource, UICollectio
                 memeLauncher.styleType = 5
             }
         }
+        memeLauncher.index = index
+        memeLauncher.isFav = true
+        memeLauncher.favoriteCollectionView = self
         memeLauncher.expandMemeView()
     }
     
@@ -160,12 +149,15 @@ class FavoritesCollectionView: BaseCell, UICollectionViewDataSource, UICollectio
         return 0
     }
     
+    func toggleFavorite(index:Int){
+        mainController?.photos[index].toggleFav()
+    }
 }
 
 extension FavoritesCollectionView : PinterestLayoutDelegate {
     // 1. Returns the photo height
     func collectionView(_ collectionView:UICollectionView, heightForPhotoAtIndexPath indexPath:IndexPath , withWidth width:CGFloat) -> CGFloat {
-        let index = mainController?.favPhotos[(pageIndex*24)+indexPath.item]
+        let index = mainController?.favPhotos[indexPath.item]
         let photo = mainController?.photos[index!]
         let boundingRect =  CGRect(x: 0, y: 0, width: width, height: CGFloat(MAXFLOAT))
         let rect  = AVMakeRect(aspectRatio: (photo?.image.size)!, insideRect: boundingRect)
@@ -176,7 +168,7 @@ extension FavoritesCollectionView : PinterestLayoutDelegate {
     func collectionView(_ collectionView: UICollectionView, heightForAnnotationAtIndexPath indexPath: IndexPath, withWidth width: CGFloat) -> CGFloat {
         let annotationPadding = CGFloat(4)
         let annotationHeaderHeight = CGFloat(17)
-        let index = mainController?.favPhotos[(pageIndex*24)+indexPath.item]
+        let index = mainController?.favPhotos[indexPath.item]
         let photo = mainController?.photos[index!]
         let font = UIFont(name: "AvenirNext-Regular", size: 10)!
         let commentHeight = photo?.heightForComment(font, width: width)

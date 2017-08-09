@@ -14,43 +14,68 @@ class PinCell: BaseCell, UICollectionViewDataSource, UICollectionViewDelegate, U
     let cellId = "AnnotatedPhotoCell"
     var pageIndex = 0
     var widthOffset = -80
-    var numberOfPages = 11
-    //var layouts = Array(repeating: PinterestLayout(), count: 11)
+    //   Taking out the paging collectionview.  Its getting out of hand
+    //var numberOfPages = 5
+    //var imagePerPage = 13
+    //   Below is the updated values for a trigrid layout
+    var numberOfPages = 1
+    var imagePerPage = 65
+    var memeEditLauncher = MemeEditLauncher()
+    
     var layouts = [PinterestLayout]()
-    var mainController: MainController? {
-        didSet {
-            for i in 0...10{
-                let l = PinterestLayout()
-                l.page = i
-                layouts.append(l)
-            }
-            
-            pageIndex = 0
-            //print("photocount ", mainController?.photos.count)
-            //print("num of layouts", layouts.count)
-            for lay in layouts {
-                //print("pre page/cacheSize ", lay.page, lay.cacheSize())
-                self.collectionView.collectionViewLayout = lay
-                (self.collectionView.collectionViewLayout as! PinterestLayout).delegate = self
-                //pageIndex -= 1
-                self.collectionView.reloadData()
-                //print("post page/cacheSize ", lay.page, lay.cacheSize())
-            }
-            //print("PinCell:: does it prepare here?")
-            pageIndex = 0
-        }
-    }
+    var trilayout = TrigridLayout()
     
     lazy var collectionView: UICollectionView = {
-        let layout = PinterestLayout()
+        let layout = TrigridLayout()
+        print("PinCell TrigridCollectionView init")
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.backgroundColor = UIColor.white
         cv.dataSource = self
         cv.delegate = self
-
         return cv
     }()
+    
+    var mainController: MainController? {
+        didSet {
+            if layouts.count == 0{
+                self.collectionView.collectionViewLayout = trilayout
+                (self.collectionView.collectionViewLayout as! TrigridLayout).delegate = self
+                self.collectionView.reloadData()
+                
+                // older version where there was a right/left pager
+                //   and partitioned collectionviews
+                
+                /*for i in 0...numberOfPages-1{
+                    let l = PinterestLayout()
+                    l.page = i
+                    
+                    self.collectionView.collectionViewLayout = l
+                    (self.collectionView.collectionViewLayout as! PinterestLayout).delegate = self
+                    self.collectionView.reloadData()
+                    layouts.append(l)
+                    pageIndex+=1
+                }
+                 
+                 pageIndex = 0
+                 */
+                
+                /*for lay in layouts {
+                    self.collectionView.collectionViewLayout = lay
+                    (self.collectionView.collectionViewLayout as! PinterestLayout).delegate = self
+                    self.collectionView.reloadData()
+                    pageIndex += 1
+                }*/
+                
+                
+                //pageIndex = 0
+                //self.collectionView.collectionViewLayout = layouts[0]
+                //(self.collectionView.collectionViewLayout as! PinterestLayout).delegate = self
+                //self.collectionView.reloadData()
 
+            }
+        }
+    }
+    
     lazy var rightButton: ButtonLauncher = {
         let b = ButtonLauncher()
         b.pinCell = self
@@ -86,11 +111,6 @@ class PinCell: BaseCell, UICollectionViewDataSource, UICollectionViewDelegate, U
     }
     
     func setupLRButtons(){
-
-        
-        let keyWindow = UIApplication.shared.keyWindow
-        let keyFrame = keyWindow?.frame
-        
         rightButton.collectionView.layer.cornerRadius = 40
         rightButton.frame = CGRect(x: self.frame.width - 96, y: self.frame.height - 96, width: 80, height: 80)
         addSubview(rightButton)
@@ -102,10 +122,11 @@ class PinCell: BaseCell, UICollectionViewDataSource, UICollectionViewDelegate, U
     
     func handlePager(flag: Int){
         if flag == 0 && pageIndex > 0{
+            // left button pressed while page index > 0
             pageIndex -= 1
-
             self.collectionView.collectionViewLayout = layouts[pageIndex]
-            self.collectionView.reloadData()
+            //self.collectionView.reloadData()
+            self.collectionView.reloadSections(  NSIndexSet(index: 0) as IndexSet )
             
             if pageIndex == 0{
                 toggleLButton(flag: 1)
@@ -113,22 +134,20 @@ class PinCell: BaseCell, UICollectionViewDataSource, UICollectionViewDelegate, U
                 toggleRButton(flag: 0)
             }
         }else if flag == 1 && pageIndex < numberOfPages-1{
+            // right button pressed while page index < numOfPages-1
             pageIndex += 1
-
             self.collectionView.collectionViewLayout = layouts[pageIndex]
-            self.collectionView.reloadData()
-
-            (self.collectionView.collectionViewLayout as! PinterestLayout).delegate = self
-            print("page/cache size " , (self.collectionView.collectionViewLayout as! PinterestLayout).page, (self.collectionView.collectionViewLayout as! PinterestLayout).cacheSize())
+            //self.collectionView.reloadData()
+            self.collectionView.reloadSections(  NSIndexSet(index: 0) as IndexSet )
+            (self.collectionView.collectionViewLayout as! TrigridLayout).delegate = self
+            
             if pageIndex == numberOfPages-1{
+                //self.collectionView.reloadData()
                 toggleRButton(flag: 1)
             }else if pageIndex == 1{
-                print("left button toggle in should happen")
                 toggleLButton(flag: 0)
             }
-            //self.collectionView.reloadData()
         }
-        print("current page/left button x/right button x ", pageIndex, leftButton.frame.origin.x, rightButton.frame.origin.x)
     }
     
     override func setupViews() {
@@ -137,55 +156,68 @@ class PinCell: BaseCell, UICollectionViewDataSource, UICollectionViewDelegate, U
         addConstraintsWithFormat("H:|[v0]|", views: collectionView)
         addConstraintsWithFormat("V:|[v0]|", views: collectionView)
         collectionView.register(AnnotatedPhotoCell.self, forCellWithReuseIdentifier: cellId)
-        print("PinCell:: setupViews()")
-        self.setupLRButtons()
-
-        //collectionView.register(AnnotatedPhotoCell.self, forCellWithReuseIdentifier: cellId)
+        
+        
+        //memeEditLauncher.pinCell = self
+        //   Taking this method out and opting out for a trigrid layout since
+        //     the paging collectionviews are getting ridiculous
+        //self.setupLRButtons()
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         // 288 default photos total
-        // 24 images by 12?
+        // 26 images by 12?
+        /*if mainController != nil{
+            if pageIndex != numberOfPages{
+                return imagePerPage
+            }else{
+                return (mainController?.photos.count)!%imagePerPage
+            }
+        }else{
+            return 0
+        }*/
         if mainController != nil{
-            return 24
+            return (mainController?.photos.count)!
         }else{
             return 0
         }
-        //return photos.count
+        
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        var offsetIndexPath = indexPath
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "AnnotatedPhotoCell", for: indexPath) as! AnnotatedPhotoCell
-        //print("Post IndexPath cellForItemAt: ", indexPath.item, indexPath.section, indexPath.row)
-        cell.photo = mainController?.photos[indexPath.item+(pageIndex*24)]
+        cell.photo = mainController?.photos[indexPath.item+(pageIndex*imagePerPage)]
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print("item selected at " ,(pageIndex*24)+indexPath.item)
-        let memeLauncher = MemeEditLauncher()
-        memeLauncher.image = mainController?.photos[(pageIndex*24)+indexPath.item].image
-        memeLauncher.path = mainController?.photos[(pageIndex*24)+indexPath.item].path
-        memeLauncher.params = (mainController?.photos[(pageIndex*24)+indexPath.item].params)!
-        let style = mainController?.photos[(pageIndex*24)+indexPath.item].style
+        //let memeEditLauncher = MemeEditLauncher()
+        
+        //memeEditLauncher = MemeEditLauncher()
+        //memeEditLauncher.image = mainController?.photos[(pageIndex*imagePerPage)+indexPath.item].image
+        //memeEditLauncher.imgSettings(img: (mainController?.photos[(pageIndex*imagePerPage)+indexPath.item].image)!)
+        memeEditLauncher.pathSettings(p: (mainController?.photos[(pageIndex*imagePerPage)+indexPath.item].path)!)
+        memeEditLauncher.params = (mainController?.photos[(pageIndex*imagePerPage)+indexPath.item].params)!
+        let style = mainController?.photos[(pageIndex*imagePerPage)+indexPath.item].style
         if style != "Default"{
             if style == "One-Panel"{
-                memeLauncher.styleType = 1
+                memeEditLauncher.styleType = 1
             }else if style == "Two-Panel"{
-                memeLauncher.styleType = 2
+                memeEditLauncher.styleType = 2
             }else if style == "Three-Panel"{
-                memeLauncher.styleType = 3
+                memeEditLauncher.styleType = 3
             }else if style == "Four-Panel"{
-                memeLauncher.styleType = 4
+                memeEditLauncher.styleType = 4
             }else if style == "Custom"{
-                memeLauncher.styleType = 5
+                memeEditLauncher.styleType = 5
             }
         }
-        memeLauncher.index = (pageIndex*24)+indexPath.item
-        memeLauncher.pinCell = self
-        memeLauncher.isFav = mainController?.photos[(pageIndex*24)+indexPath.item].isFaved()
-        memeLauncher.expandMemeView()
+        memeEditLauncher.index = (pageIndex*imagePerPage)+indexPath.item
+        //memeEditLauncher.pinCell = self
+        //memeEditLauncher.isFav = mainController?.photos[(pageIndex*imagePerPage)+indexPath.item].isFaved()
+        memeEditLauncher.favSettings(fav: (mainController?.photos[(pageIndex*imagePerPage)+indexPath.item].isFaved())!)
+        
+        memeEditLauncher.expandMemeView()
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
@@ -197,14 +229,14 @@ class PinCell: BaseCell, UICollectionViewDataSource, UICollectionViewDelegate, U
     }
 }
 
-extension PinCell : PinterestLayoutDelegate {
+//extension PinCell : PinterestLayoutDelegate {
+extension PinCell : TrigridLayoutDelegate {
+   
     // 1. Returns the photo height
     func collectionView(_ collectionView:UICollectionView, heightForPhotoAtIndexPath indexPath:IndexPath , withWidth width:CGFloat) -> CGFloat {
-        print("PinCell:: beginning heightForPhotoAtIndexPath for ", indexPath.item)
-        let photo = mainController?.photos[(pageIndex*24)+indexPath.item]
+        let photo = mainController?.photos[(pageIndex*imagePerPage)+indexPath.item]
         let boundingRect =  CGRect(x: 0, y: 0, width: width, height: CGFloat(MAXFLOAT))
         let rect  = AVMakeRect(aspectRatio: (photo?.image.size)!, insideRect: boundingRect)
-        print("PinCell:: photo height calculated and returned ", rect.size.height)
         return rect.size.height
     }
     
@@ -212,8 +244,7 @@ extension PinCell : PinterestLayoutDelegate {
     func collectionView(_ collectionView: UICollectionView, heightForAnnotationAtIndexPath indexPath: IndexPath, withWidth width: CGFloat) -> CGFloat {
         let annotationPadding = CGFloat(4)
         let annotationHeaderHeight = CGFloat(17)
-        
-        let photo = mainController?.photos[(pageIndex*24)+indexPath.item]
+        let photo = mainController?.photos[(pageIndex*imagePerPage)+indexPath.item]
         let font = UIFont(name: "AvenirNext-Regular", size: 10)!
         let commentHeight = photo?.heightForComment(font, width: width)
         let height = annotationPadding + annotationHeaderHeight + commentHeight! + annotationPadding
